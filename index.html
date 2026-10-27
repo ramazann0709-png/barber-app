@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Онлайн-запись</title>
+  <title>Барбершоп</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -15,6 +15,8 @@
       --text-main: #f3f4f6;
       --text-sub: #8b92a0;
       --tag-bg: rgba(255, 255, 255, 0.05);
+      --danger: #ef4444;
+      --success: #22c55e;
     }
 
     * {
@@ -24,62 +26,119 @@
 
     body {
       margin: 0;
-      padding: 20px 16px 90px 16px;
+      padding: 16px 16px 85px 16px;
       background-color: var(--bg);
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
       user-select: none;
     }
 
-    .header {
-      margin-bottom: 24px;
+    /* Навигация внизу */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background: rgba(22, 25, 31, 0.95);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 100;
     }
 
-    .header-tag {
-      display: inline-block;
-      font-size: 0.72rem;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
+    .tab-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
       color: var(--text-sub);
-      background: var(--tag-bg);
-      padding: 4px 10px;
-      border-radius: 20px;
-      margin-bottom: 8px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      flex: 1;
     }
 
-    .header-title {
-      font-size: 1.45rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      margin: 0;
+    .tab-btn.active {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tab-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
     }
 
     .section-label {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       letter-spacing: 1px;
       text-transform: uppercase;
       color: var(--text-sub);
       font-weight: 600;
-      margin: 22px 0 12px 2px;
+      margin: 20px 0 10px 2px;
+    }
+
+    /* Календарь (горизонтальный скролл) */
+    .days-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .days-scroll::-webkit-scrollbar { display: none; }
+
+    .day-chip {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      min-width: 60px;
+      text-align: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .day-chip.selected {
+      border-color: var(--accent);
+      background: #1b2028;
+    }
+
+    .day-chip-name {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      text-transform: uppercase;
+    }
+
+    .day-chip-num {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-top: 2px;
     }
 
     /* Услуги */
-    .services-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
     .service-card {
       background: var(--surface);
       border: 1px solid var(--surface-border);
       border-radius: 14px;
-      padding: 16px 18px;
+      padding: 15px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      transition: border-color 0.15s ease, background-color 0.15s ease;
+      margin-bottom: 8px;
     }
 
     .service-card.selected {
@@ -87,213 +146,346 @@
       background: #1b2028;
     }
 
-    .service-card-left {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .service-card-name {
-      font-size: 0.95rem;
-      font-weight: 600;
-      letter-spacing: -0.2px;
-    }
-
-    .service-card-duration {
-      font-size: 0.8rem;
-      color: var(--text-sub);
-    }
-
-    .service-card-price {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
+    .service-name { font-weight: 600; font-size: 0.95rem; }
+    .service-meta { font-size: 0.8rem; color: var(--text-sub); margin-top: 3px; }
+    .service-price { font-weight: 700; font-size: 1rem; }
 
     /* Мастера */
-    .masters-stack {
+    .masters-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
     }
 
-    .master-item {
+    .master-card {
       background: var(--surface);
       border: 1px solid var(--surface-border);
       border-radius: 14px;
-      padding: 14px 8px;
+      padding: 12px 6px;
       text-align: center;
       cursor: pointer;
-      transition: border-color 0.15s ease, background-color 0.15s ease;
     }
 
-    .master-item.selected {
+    .master-card.selected {
       border-color: var(--accent);
       background: #1b2028;
     }
 
     .master-avatar {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       background: var(--accent-muted);
-      margin: 0 auto 8px auto;
+      margin: 0 auto 6px auto;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--text-main);
     }
 
-    .master-name {
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    .master-role {
-      font-size: 0.72rem;
-      color: var(--text-sub);
-      margin-top: 2px;
-    }
-
-    /* Тайм-слоты */
-    .slots-grid {
+    /* Слоты времени */
+    .time-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 8px;
     }
 
-    .slot-item {
+    .time-item {
       background: var(--surface);
       border: 1px solid var(--surface-border);
       border-radius: 10px;
-      padding: 12px 0;
+      padding: 11px 0;
       text-align: center;
       font-size: 0.88rem;
-      font-weight: 500;
       cursor: pointer;
-      transition: all 0.15s ease;
     }
 
-    .slot-item.selected {
+    .time-item.selected {
       border-color: var(--accent);
       background: var(--accent);
-      color: #000000;
+      color: #000;
       font-weight: 700;
+    }
+
+    /* Аналитика и Заказы (Админка) */
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .stat-val { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+    .stat-sub { font-size: 0.75rem; color: var(--text-sub); }
+
+    .admin-order-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .order-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 8px 0;
+      border-radius: 8px;
+      border: 1px solid var(--surface-border);
+      background: var(--accent-muted);
+      color: var(--text-main);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-action.done {
+      background: var(--success);
+      color: #000;
+      border: none;
     }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <span class="header-tag">Online Booking</span>
-    <h1 class="header-title">Выбор параметров</h1>
+  <!-- ВКЛАДКА 1: ЗАПИСЬ -->
+  <div id="page-book" class="page active">
+    <div style="margin-bottom: 16px;">
+      <h1 style="font-size: 1.4rem; margin: 0;">Онлайн-запись</h1>
+      <div style="font-size: 0.82rem; color: var(--text-sub); margin-top: 4px;">Выберите день, услугу и мастера</div>
+    </div>
+
+    <div class="section-label">Дата визита</div>
+    <div class="days-scroll" id="days-container"></div>
+
+    <div class="section-label">Услуга</div>
+    <div id="services-container">
+      <div class="service-card selected" onclick="setService(this, 'Мужская стрижка', 1200)">
+        <div>
+          <div class="service-name">Мужская стрижка</div>
+          <div class="service-meta">45 мин • Мытье и укладка</div>
+        </div>
+        <div class="service-price">1 200 ₽</div>
+      </div>
+      <div class="service-card" onclick="setService(this, 'Моделирование бороды', 700)">
+        <div>
+          <div class="service-name">Моделирование бороды</div>
+          <div class="service-meta">30 мин • Окантовка и уход</div>
+        </div>
+        <div class="service-price">700 ₽</div>
+      </div>
+      <div class="service-card" onclick="setService(this, 'Стрижка + Борода', 1700)">
+        <div>
+          <div class="service-name">Стрижка + Борода</div>
+          <div class="service-meta">75 мин • Полный комплекс</div>
+        </div>
+        <div class="service-price">1 700 ₽</div>
+      </div>
+    </div>
+
+    <div class="section-label">Барбер</div>
+    <div class="masters-grid">
+      <div class="master-card selected" onclick="setMaster(this, 'Магомед')">
+        <div class="master-avatar">М</div>
+        <div style="font-size: 0.85rem; font-weight: 600;">Магомед</div>
+        <div style="font-size: 0.7rem; color: var(--text-sub);">Top Barber</div>
+      </div>
+      <div class="master-card" onclick="setMaster(this, 'Али')">
+        <div class="master-avatar">А</div>
+        <div style="font-size: 0.85rem; font-weight: 600;">Али</div>
+        <div style="font-size: 0.7rem; color: var(--text-sub);">Barber</div>
+      </div>
+      <div class="master-card" onclick="setMaster(this, 'Мурад')">
+        <div class="master-avatar">М</div>
+        <div style="font-size: 0.85rem; font-weight: 600;">Мурад</div>
+        <div style="font-size: 0.7rem; color: var(--text-sub);">Barber</div>
+      </div>
+    </div>
+
+    <div class="section-label">Время</div>
+    <div class="time-grid">
+      <div class="time-item selected" onclick="setTime(this, '11:00')">11:00</div>
+      <div class="time-item" onclick="setTime(this, '12:30')">12:30</div>
+      <div class="time-item" onclick="setTime(this, '14:00')">14:00</div>
+      <div class="time-item" onclick="setTime(this, '15:30')">15:30</div>
+      <div class="time-item" onclick="setTime(this, '17:00')">17:00</div>
+      <div class="time-item" onclick="setTime(this, '18:30')">18:30</div>
+      <div class="time-item" onclick="setTime(this, '20:00')">20:00</div>
+    </div>
   </div>
 
-  <div class="section-label">Услуга</div>
-  <div class="services-stack" id="services-group">
-    <div class="service-card selected" onclick="pickService(this, 'Мужская стрижка', 1200)">
-      <div class="service-card-left">
-        <span class="service-card-name">Мужская стрижка</span>
-        <span class="service-card-duration">45 минут • Мытье и укладка</span>
+  <!-- ВКЛАДКА 2: МОИ ВИЗИТЫ -->
+  <div id="page-my-orders" class="page">
+    <h1 style="font-size: 1.4rem; margin: 0 0 16px 0;">Мои визиты</h1>
+    <div class="admin-order-card">
+      <div class="order-header">
+        <span>Мужская стрижка</span>
+        <span style="color: var(--success);">Подтверждено</span>
       </div>
-      <span class="service-card-price">1 200 ₽</span>
-    </div>
-    <div class="service-card" onclick="pickService(this, 'Моделирование бороды', 700)">
-      <div class="service-card-left">
-        <span class="service-card-name">Моделирование бороды</span>
-        <span class="service-card-duration">30 минут • Окантовка и масло</span>
-      </div>
-      <span class="service-card-price">700 ₽</span>
-    </div>
-    <div class="service-card" onclick="pickService(this, 'Комплекс (Стрижка + Борода)', 1700)">
-      <div class="service-card-left">
-        <span class="service-card-name">Комплекс: Стрижка + Борода</span>
-        <span class="service-card-duration">75 минут • Полный уход</span>
-      </div>
-      <span class="service-card-price">1 700 ₽</span>
+      <div style="font-size: 0.85rem; color: var(--text-sub);">Сегодня, 14:00 • Барбер: Магомед</div>
+      <div style="font-size: 0.9rem; font-weight: 700; margin-top: 8px;">1 200 ₽</div>
     </div>
   </div>
 
-  <div class="section-label">Мастер</div>
-  <div class="masters-stack" id="masters-group">
-    <div class="master-item selected" onclick="pickMaster(this, 'Магомед')">
-      <div class="master-avatar">М</div>
-      <div class="master-name">Магомед</div>
-      <div class="master-role">Top Barber</div>
+  <!-- ВКЛАДКА 3: ПАНЕЛЬ УПРАВЛЕНИЯ (ТОЛЬКО ДЛЯ АДМИНА) -->
+  <div id="page-admin" class="page">
+    <h1 style="font-size: 1.4rem; margin: 0 0 16px 0;">Кабинет владельца</h1>
+    
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-sub">Выручка сегодня</div>
+        <div class="stat-val">12 400 ₽</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-sub">Записей на день</div>
+        <div class="stat-val">8</div>
+      </div>
     </div>
-    <div class="master-item" onclick="pickMaster(this, 'Али')">
-      <div class="master-avatar">А</div>
-      <div class="master-name">Али</div>
-      <div class="master-role">Barber</div>
-    </div>
-    <div class="master-item" onclick="pickMaster(this, 'Мурад')">
-      <div class="master-avatar">М</div>
-      <div class="master-name">Мурад</div>
-      <div class="master-role">Barber</div>
+
+    <div class="section-label">Ближайшие гости</div>
+    
+    <div class="admin-order-card">
+      <div class="order-header">
+        <span>Магомед (Клиент)</span>
+        <span>14:00</span>
+      </div>
+      <div style="font-size: 0.82rem; color: var(--text-sub);">Стрижка + Борода • Мастер: Али</div>
+      <div style="font-weight: 700; margin-top: 6px;">1 700 ₽</div>
+      <div class="order-actions">
+        <button class="btn-action" onclick="alert('Добавлено: Мытье/Патчи (+300 ₽)')">+ Патчи (300 ₽)</button>
+        <button class="btn-action done" onclick="alert('Чек успешно закрыт!')">Завершить</button>
+      </div>
     </div>
   </div>
 
-  <div class="section-label">Время на сегодня</div>
-  <div class="slots-grid" id="slots-group">
-    <div class="slot-item selected" onclick="pickSlot(this, '12:00')">12:00</div>
-    <div class="slot-item" onclick="pickSlot(this, '13:30')">13:30</div>
-    <div class="slot-item" onclick="pickSlot(this, '15:00')">15:00</div>
-    <div class="slot-item" onclick="pickSlot(this, '16:30')">16:30</div>
-    <div class="slot-item" onclick="pickSlot(this, '18:00')">18:00</div>
-    <div class="slot-item" onclick="pickSlot(this, '19:30')">19:30</div>
-    <div class="slot-item" onclick="pickSlot(this, '20:30')">20:30</div>
-  </div>
+  <!-- НИЖНЯЯ ПАНЕЛЬ ПЕРЕКЛЮЧЕНИЯ -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('book', this)">
+      <span>💈</span>
+      <span>Запись</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('my-orders', this)">
+      <span>📅</span>
+      <span>Визиты</span>
+    </button>
+    <button class="tab-btn" id="admin-tab-btn" style="display: none;" onclick="switchTab('admin', this)">
+      <span>👑</span>
+      <span>Владелец</span>
+    </button>
+  </nav>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
 
-    // Настройка цвета нижней плашки Telegram
-    tg.MainButton.color = "#ffffff";
-    tg.MainButton.textColor = "#000000";
+    // ID владельца (для отображения вкладки админа)
+    const OWNER_TG_ID = 9178306592; // Твой Telegram ID
+    const currentUserId = tg.initDataUnsafe?.user?.id;
 
-    let state = {
+    if (currentUserId === OWNER_TG_ID || !currentUserId) {
+      document.getElementById('admin-tab-btn').style.display = 'flex';
+    }
+
+    // Генерация дней на неделю вперед
+    const daysContainer = document.getElementById('days-container');
+    const weekDays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    let selectedDate = "Сегодня";
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      const dayName = i === 0 ? 'Сегодня' : weekDays[d.getDay()];
+      const dayNum = d.getDate();
+
+      const chip = document.createElement('div');
+      chip.className = `day-chip ${i === 0 ? 'selected' : ''}`;
+      chip.innerHTML = `<div class="day-chip-name">${dayName}</div><div class="day-chip-num">${dayNum}</div>`;
+      chip.onclick = function() {
+        document.querySelectorAll('.day-chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedDate = `${dayName}, ${dayNum}`;
+        updateButton();
+      };
+      daysContainer.appendChild(chip);
+    }
+
+    let booking = {
+      date: "Сегодня",
       service: "Мужская стрижка",
       price: 1200,
       master: "Магомед",
-      time: "12:00"
+      time: "11:00"
     };
 
-    function syncButton() {
-      tg.MainButton.setText(`ПОДТВЕРДИТЬ • ${state.time} • ${state.price} ₽`);
+    function updateButton() {
+      tg.MainButton.color = "#ffffff";
+      tg.MainButton.textColor = "#000000";
+      tg.MainButton.setText(`ЗАПИСАТЬСЯ • ${booking.time} • ${booking.price} ₽`);
       tg.MainButton.show();
     }
 
-    function pickService(el, name, price) {
-      document.querySelectorAll('#services-group .service-card').forEach(item => item.classList.remove('selected'));
+    function setService(el, name, price) {
+      document.querySelectorAll('#services-container .service-card').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
-      state.service = name;
-      state.price = price;
-      syncButton();
+      booking.service = name;
+      booking.price = price;
+      updateButton();
     }
 
-    function pickMaster(el, name) {
-      document.querySelectorAll('#masters-group .master-item').forEach(item => item.classList.remove('selected'));
+    function setMaster(el, name) {
+      document.querySelectorAll('.master-card').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
-      state.master = name;
-      syncButton();
+      booking.master = name;
+      updateButton();
     }
 
-    function pickSlot(el, time) {
-      document.querySelectorAll('#slots-group .slot-item').forEach(item => item.classList.remove('selected'));
+    function setTime(el, time) {
+      document.querySelectorAll('.time-item').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
-      state.time = time;
-      syncButton();
+      booking.time = time;
+      updateButton();
+    }
+
+    function switchTab(tabName, btn) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      document.getElementById(`page-${tabName}`).classList.add('active');
+      btn.classList.add('active');
+
+      if (tabName === 'book') {
+        tg.MainButton.show();
+      } else {
+        tg.MainButton.hide();
+      }
     }
 
     Telegram.WebApp.onEvent('mainButtonClicked', function() {
-      tg.sendData(JSON.stringify(state));
+      booking.date = selectedDate;
+      tg.sendData(JSON.stringify(booking));
     });
 
-    syncButton();
+    updateButton();
   </script>
 </body>
 </html>
