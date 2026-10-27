@@ -3,187 +3,297 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Запись в барбершоп</title>
-  <!-- Telegram WebApp SDK -->
+  <title>Онлайн-запись</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg-color: #121212;
-      --card-bg: #1e1e1e;
-      --accent: #d4af37;
-      --text: #ffffff;
-      --text-muted: #888888;
+      --bg: #0d0f12;
+      --surface: #16191f;
+      --surface-border: #232730;
+      --accent: #ffffff;
+      --accent-muted: #2a2f3a;
+      --text-main: #f3f4f6;
+      --text-sub: #8b92a0;
+      --tag-bg: rgba(255, 255, 255, 0.05);
     }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
       margin: 0;
-      padding: 16px;
-      background-color: var(--bg-color);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      padding: 20px 16px 90px 16px;
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
       user-select: none;
     }
-    h2 {
-      font-size: 1.1rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--accent);
-      margin: 16px 0 10px 0;
+
+    .header {
+      margin-bottom: 24px;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr;
+
+    .header-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      background: var(--tag-bg);
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0;
+    }
+
+    .section-label {
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      font-weight: 600;
+      margin: 22px 0 12px 2px;
+    }
+
+    /* Услуги */
+    .services-stack {
+      display: flex;
+      flex-direction: column;
       gap: 10px;
     }
-    .card {
-      background: var(--card-bg);
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid #2a2a2a;
+
+    .service-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 16px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
     }
-    .card.selected {
+
+    .service-card.selected {
       border-color: var(--accent);
-      background: #25221b;
+      background: #1b2028;
     }
-    .card-title {
-      font-weight: 600;
+
+    .service-card-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .service-card-name {
       font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.2px;
     }
-    .card-price {
-      color: var(--accent);
-      font-weight: bold;
+
+    .service-card-duration {
+      font-size: 0.8rem;
+      color: var(--text-sub);
     }
-    .masters-grid {
+
+    .service-card-price {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Мастера */
+    .masters-stack {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
     }
-    .master-card {
-      background: var(--card-bg);
-      border: 1px solid #2a2a2a;
-      border-radius: 12px;
-      padding: 12px 6px;
+
+    .master-item {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 14px 8px;
       text-align: center;
       cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
     }
-    .master-card.selected {
+
+    .master-item.selected {
       border-color: var(--accent);
-      background: #25221b;
+      background: #1b2028;
     }
-    .time-grid {
+
+    .master-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--accent-muted);
+      margin: 0 auto 8px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-main);
+    }
+
+    .master-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .master-role {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    /* Тайм-слоты */
+    .slots-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
     }
-    .time-slot {
-      background: var(--card-bg);
-      border: 1px solid #2a2a2a;
-      border-radius: 8px;
-      padding: 10px 0;
+
+    .slot-item {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 10px;
+      padding: 12px 0;
       text-align: center;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
+      font-weight: 500;
       cursor: pointer;
+      transition: all 0.15s ease;
     }
-    .time-slot.selected {
+
+    .slot-item.selected {
       border-color: var(--accent);
       background: var(--accent);
-      color: #000;
-      font-weight: bold;
+      color: #000000;
+      font-weight: 700;
     }
   </style>
 </head>
 <body>
 
-  <h2>1. Выберите услугу</h2>
-  <div class="grid" id="services-list">
-    <div class="card selected" onclick="selectService(this, 'Мужская стрижка', 1200)">
-      <span class="card-title">Мужская стрижка</span>
-      <span class="card-price">1200 ₽</span>
+  <div class="header">
+    <span class="header-tag">Online Booking</span>
+    <h1 class="header-title">Выбор параметров</h1>
+  </div>
+
+  <div class="section-label">Услуга</div>
+  <div class="services-stack" id="services-group">
+    <div class="service-card selected" onclick="pickService(this, 'Мужская стрижка', 1200)">
+      <div class="service-card-left">
+        <span class="service-card-name">Мужская стрижка</span>
+        <span class="service-card-duration">45 минут • Мытье и укладка</span>
+      </div>
+      <span class="service-card-price">1 200 ₽</span>
     </div>
-    <div class="card" onclick="selectService(this, 'Моделирование бороды', 700)">
-      <span class="card-title">Моделирование бороды</span>
-      <span class="card-price">700 ₽</span>
+    <div class="service-card" onclick="pickService(this, 'Моделирование бороды', 700)">
+      <div class="service-card-left">
+        <span class="service-card-name">Моделирование бороды</span>
+        <span class="service-card-duration">30 минут • Окантовка и масло</span>
+      </div>
+      <span class="service-card-price">700 ₽</span>
     </div>
-    <div class="card" onclick="selectService(this, 'Комплекс (Стрижка + Борода)', 1700)">
-      <span class="card-title">Комплекс (Стрижка + Борода)</span>
-      <span class="card-price">1700 ₽</span>
+    <div class="service-card" onclick="pickService(this, 'Комплекс (Стрижка + Борода)', 1700)">
+      <div class="service-card-left">
+        <span class="service-card-name">Комплекс: Стрижка + Борода</span>
+        <span class="service-card-duration">75 минут • Полный уход</span>
+      </div>
+      <span class="service-card-price">1 700 ₽</span>
     </div>
   </div>
 
-  <h2>2. Выберите мастера</h2>
-  <div class="masters-grid" id="masters-list">
-    <div class="master-card selected" onclick="selectMaster(this, 'Магомед')">
-      <div style="font-size: 1.5rem; margin-bottom: 4px;">✂️</div>
-      <div style="font-size: 0.85rem; font-weight: 600;">Магомед</div>
+  <div class="section-label">Мастер</div>
+  <div class="masters-stack" id="masters-group">
+    <div class="master-item selected" onclick="pickMaster(this, 'Магомед')">
+      <div class="master-avatar">М</div>
+      <div class="master-name">Магомед</div>
+      <div class="master-role">Top Barber</div>
     </div>
-    <div class="master-card" onclick="selectMaster(this, 'Али')">
-      <div style="font-size: 1.5rem; margin-bottom: 4px;">✂️</div>
-      <div style="font-size: 0.85rem; font-weight: 600;">Али</div>
+    <div class="master-item" onclick="pickMaster(this, 'Али')">
+      <div class="master-avatar">А</div>
+      <div class="master-name">Али</div>
+      <div class="master-role">Barber</div>
     </div>
-    <div class="master-card" onclick="selectMaster(this, 'Мурад')">
-      <div style="font-size: 1.5rem; margin-bottom: 4px;">✂️</div>
-      <div style="font-size: 0.85rem; font-weight: 600;">Мурад</div>
+    <div class="master-item" onclick="pickMaster(this, 'Мурад')">
+      <div class="master-avatar">М</div>
+      <div class="master-name">Мурад</div>
+      <div class="master-role">Barber</div>
     </div>
   </div>
 
-  <h2>3. Время на сегодня</h2>
-  <div class="time-grid" id="time-list">
-    <div class="time-slot selected" onclick="selectTime(this, '12:00')">12:00</div>
-    <div class="time-slot" onclick="selectTime(this, '14:00')">14:00</div>
-    <div class="time-slot" onclick="selectTime(this, '16:00')">16:00</div>
-    <div class="time-slot" onclick="selectTime(this, '18:00')">18:00</div>
-    <div class="time-slot" onclick="selectTime(this, '19:30')">19:30</div>
-    <div class="time-slot" onclick="selectTime(this, '20:30')">20:30</div>
+  <div class="section-label">Время на сегодня</div>
+  <div class="slots-grid" id="slots-group">
+    <div class="slot-item selected" onclick="pickSlot(this, '12:00')">12:00</div>
+    <div class="slot-item" onclick="pickSlot(this, '13:30')">13:30</div>
+    <div class="slot-item" onclick="pickSlot(this, '15:00')">15:00</div>
+    <div class="slot-item" onclick="pickSlot(this, '16:30')">16:30</div>
+    <div class="slot-item" onclick="pickSlot(this, '18:00')">18:00</div>
+    <div class="slot-item" onclick="pickSlot(this, '19:30')">19:30</div>
+    <div class="slot-item" onclick="pickSlot(this, '20:30')">20:30</div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.expand(); // Разворачиваем окно на весь экран
+    tg.ready();
+    tg.expand();
 
-    let booking = {
+    // Настройка цвета нижней плашки Telegram
+    tg.MainButton.color = "#ffffff";
+    tg.MainButton.textColor = "#000000";
+
+    let state = {
       service: "Мужская стрижка",
       price: 1200,
       master: "Магомед",
       time: "12:00"
     };
 
-    function updateMainButton() {
-      tg.MainButton.setText(`ЗАПИСАТЬСЯ НА ${booking.time} (${booking.price} ₽)`);
+    function syncButton() {
+      tg.MainButton.setText(`ПОДТВЕРДИТЬ • ${state.time} • ${state.price} ₽`);
       tg.MainButton.show();
     }
 
-    function selectService(el, name, price) {
-      document.querySelectorAll('#services-list .card').forEach(c => c.classList.remove('selected'));
+    function pickService(el, name, price) {
+      document.querySelectorAll('#services-group .service-card').forEach(item => item.classList.remove('selected'));
       el.classList.add('selected');
-      booking.service = name;
-      booking.price = price;
-      updateMainButton();
+      state.service = name;
+      state.price = price;
+      syncButton();
     }
 
-    function selectMaster(el, name) {
-      document.querySelectorAll('#masters-list .master-card').forEach(c => c.classList.remove('selected'));
+    function pickMaster(el, name) {
+      document.querySelectorAll('#masters-group .master-item').forEach(item => item.classList.remove('selected'));
       el.classList.add('selected');
-      booking.master = name;
-      updateMainButton();
+      state.master = name;
+      syncButton();
     }
 
-    function selectTime(el, time) {
-      document.querySelectorAll('#time-list .time-slot').forEach(c => c.classList.remove('selected'));
+    function pickSlot(el, time) {
+      document.querySelectorAll('#slots-group .slot-item').forEach(item => item.classList.remove('selected'));
       el.classList.add('selected');
-      booking.time = time;
-      updateMainButton();
+      state.time = time;
+      syncButton();
     }
 
-    // При клике на нижнюю главную кнопку Telegram
-    Telegram.WebApp.onEvent('mainButtonClicked', function(){
-      tg.sendData(JSON.stringify(booking)); // Отправляем данные обратно боту
+    Telegram.WebApp.onEvent('mainButtonClicked', function() {
+      tg.sendData(JSON.stringify(state));
     });
 
-    updateMainButton();
+    syncButton();
   </script>
 </body>
 </html>
