@@ -519,104 +519,427 @@
     </div>
   </div>
 
- const API_BASE_URL = "https://hardware-eliminate-clock-curves.trycloudflare.com";
+ <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
 
-// 1. Загрузка мастеров из базы данных
-async function loadMastersFromAPI() {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/masters`);
-    if (res.ok) {
-      mastersData = await res.json();
-      renderMasters();
+    // Адрес твоего активного туннеля Cloudflare
+    const API_BASE_URL = "https://hardware-eliminate-clock-curves.trycloudflare.com";
+    const OWNER_PIN = "7777";
+    let currentStep = 1;
+
+    // Список мастеров (по умолчанию, пока подгружаются данные из базы)
+    let mastersData = [
+      { id: 1, name: "Магомед", role: "Top Barber", pin: "1111", startDate: "2025-11-15" },
+      { id: 2, name: "Али", role: "Barber", pin: "2222", startDate: "2026-03-01" }
+    ];
+
+    const allScheduleSlots = [
+      "10:00", "11:00", "12:00", "13:00", "14:00", 
+      "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
+    ];
+
+    let bookedSlots = [];
+
+    let orderState = {
+      service: "Мужская стрижка",
+      price: 1200,
+      master: "Любой свободный",
+      dateFormatted: "Сегодня",
+      dateIso: "",
+      time: ""
+    };
+
+    // 1. Загрузка мастеров из FastAPI/SQLite
+    async function loadMastersFromAPI() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/masters`);
+        if (res.ok) {
+          mastersData = await res.json();
+          renderMasters();
+        }
+      } catch (err) {
+        console.error("Ошибка загрузки мастеров:", err);
+        renderMasters();
+      }
     }
-  } catch (err) {
-    console.error("Ошибка загрузки мастеров:", err);
-  }
-}
 
-// 2. Загрузка занятых слотов на выбранный день
-async function loadBookedSlotsFromAPI() {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/booked-slots?date=${encodeURIComponent(orderState.dateFormatted)}`);
-    if (res.ok) {
-      const data = await res.json();
-      bookedSlots = data.slots.map(time => `${orderState.dateIso}_${time}`);
-      renderTimeSlots();
+    // 2. Загрузка занятых слотов с сервера на выбранную дату
+    async function loadBookedSlotsFromAPI() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/booked-slots?date=${encodeURIComponent(orderState.dateFormatted)}`);
+        if (res.ok) {
+          const data = await res.json();
+          bookedSlots = data.slots.map(time => `${orderState.dateIso}_${time}`);
+          renderTimeSlots();
+        }
+      } catch (err) {
+        console.error("Ошибка слотов:", err);
+        renderTimeSlots();
+      }
     }
-  } catch (err) {
-    console.error("Ошибка слотов:", err);
-    renderTimeSlots();
-  }
-}
 
-// 3. Отправка новой брони в базу
-async function submitBooking() {
-  const payload = {
-    client_tg_id: tg.initDataUnsafe?.user?.id || 0,
-    client_name: tg.initDataUnsafe?.user?.first_name || "Гость",
-    service_name: orderState.service,
-    master_name: orderState.master,
-    visit_date: orderState.dateFormatted,
-    time_slot: orderState.time,
-    total_price: orderState.price
-  };
+    // 3. Отправка бронирования на сервер
+    async function submitBooking() {
+      const payload = {
+        client_tg_id: tg.initDataUnsafe?.user?.id || 0,
+        client_name: tg.initDataUnsafe?.user?.first_name || "Гость",
+        service_name: orderState.service,
+        master_name: orderState.master,
+        visit_date: orderState.dateFormatted,
+        time_slot: orderState.time,
+        total_price: orderState.price
+      };
 
-  tg.MainButton.showProgress();
+      tg.MainButton.showProgress();
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/book`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/book`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
 
-    tg.MainButton.hideProgress();
+        tg.MainButton.hideProgress();
 
-    if (res.ok) {
-      // Уведомление через Telegram WebApp popup
-      tg.showPopup({
-        title: "Успешно!",
-        message: `Вы записаны на ${orderState.dateFormatted} в ${orderState.time}`,
-        buttons: [{ type: "ok" }]
-      }, () => {
-        tg.close();
+        if (res.ok) {
+          tg.showPopup({
+            title: "Успешно!",
+            message: `Вы записаны на ${orderState.dateFormatted} в ${orderState.time}`,
+            buttons: [{ type: "ok" }]
+          }, () => {
+            tg.close();
+          });
+        } else {
+          const err = await res.json();
+          alert(err.detail || "Не удалось забронировать время");
+        }
+      } catch (e) {
+        tg.MainButton.hideProgress();
+        alert("Ошибка соединения с сервером");
+      }
+    }
+
+    // Расчет стажа мастеров
+    function calculateTenure(dateStr) {
+      const start = new Date(dateStr);
+      const now = new Date();
+      let years = now.getFullYear() - start.getFullYear();
+      let months = now.getMonth() - start.getMonth();
+      let days = now.getDate() - start.getDate();
+
+      if (days < 0) {
+        months -= 1;
+        const prevMonthDays = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+        days += prevMonthDays;
+      }
+      if (months < 0) {
+        years -= 1;
+        months += 12;
+      }
+
+      let res = [];
+      if (years > 0) res.push(`${years} г.`);
+      if (months > 0) res.push(`${months} мес.`);
+      if (days > 0 || res.length === 0) res.push(`${days} дн.`);
+      return res.join(" ");
+    }
+
+    function renderMasters() {
+      const clientBox = document.getElementById('masters-list-client');
+      const ownerBox = document.getElementById('owner-masters-list');
+      if (!clientBox || !ownerBox) return;
+
+      clientBox.innerHTML = '';
+      ownerBox.innerHTML = '';
+
+      mastersData.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'glass-card';
+        card.onclick = () => selectMaster(card, m.name);
+        card.innerHTML = `
+          <div class="master-item">
+            <div class="master-avatar">${m.name[0]}</div>
+            <div class="master-info">
+              <div class="master-title">${m.name}</div>
+              <div class="master-role">${m.role}</div>
+            </div>
+          </div>
+        `;
+        clientBox.appendChild(card);
+
+        const tenure = calculateTenure(m.startDate);
+        const ownerCard = document.createElement('div');
+        ownerCard.className = 'glass-card';
+        ownerCard.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.95rem;">${m.name} (${m.role})</div>
+              <div class="badge-experience">Стаж: ${tenure}</div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-dim);">PIN: ${m.pin}</div>
+          </div>
+        `;
+        ownerBox.appendChild(ownerCard);
       });
-    } else {
-      const err = await res.json();
-      alert(err.detail || "Не удалось забронировать время");
     }
-  } catch (e) {
-    tg.MainButton.hideProgress();
-    alert("Ошибка соединения с сервером");
-  }
-}
 
-// 4. Добавление мастера владельцем в базу данных
-async function openAddMasterPrompt() {
-  const name = prompt("Имя мастера:");
-  if (!name) return;
-  const role = prompt("Квалификация (Barber / Top Barber):", "Barber") || "Barber";
-  const pin = prompt("Персональный 4-значный PIN:", "0000") || "0000";
-  const startDate = prompt("Дата выхода (ГГГГ-ММ-ДД):", new Date().toISOString().split('T')[0]);
+    function setupDaysCarousel() {
+      const carousel = document.getElementById('days-carousel');
+      if (!carousel) return;
+      carousel.innerHTML = '';
+      const wDays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+      const mNames = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/masters`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: name,
-        role_title: role,
-        pin_code: pin,
-        hired_at: startDate
-      })
+      for (let i = 0; i < 14; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+
+        const iso = d.toISOString().split('T')[0];
+        const dayLabel = i === 0 ? 'Сегодня' : (i === 1 ? 'Завтра' : wDays[d.getDay()]);
+        const dayNum = d.getDate();
+        const fullFormatted = `${dayLabel}, ${dayNum} ${mNames[d.getMonth()]}`;
+
+        const card = document.createElement('div');
+        card.className = `day-card ${i === 0 ? 'selected' : ''}`;
+        card.innerHTML = `
+          <div class="day-card-wday">${dayLabel}</div>
+          <div class="day-card-num">${dayNum}</div>
+        `;
+
+        if (i === 0) {
+          orderState.dateFormatted = fullFormatted;
+          orderState.dateIso = iso;
+        }
+
+        card.onclick = () => {
+          document.querySelectorAll('.day-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          orderState.dateFormatted = fullFormatted;
+          orderState.dateIso = iso;
+          loadBookedSlotsFromAPI();
+        };
+
+        carousel.appendChild(card);
+      }
+    }
+
+    function renderTimeSlots() {
+      const container = document.getElementById('time-slots-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const now = new Date();
+      const currentIso = now.toISOString().split('T')[0];
+      const currentHour = now.getHours();
+      const isToday = (orderState.dateIso === currentIso);
+
+      let firstAvailableSelected = false;
+
+      allScheduleSlots.forEach(slot => {
+        const chip = document.createElement('div');
+        chip.className = 'time-chip';
+        chip.innerText = slot;
+
+        const [slotH] = slot.split(':').map(Number);
+        const isPast = isToday && (slotH <= currentHour);
+        const isBooked = bookedSlots.includes(`${orderState.dateIso}_${slot}`);
+
+        if (isPast || isBooked) {
+          chip.classList.add('disabled');
+        } else {
+          if (!firstAvailableSelected) {
+            chip.classList.add('selected');
+            orderState.time = slot;
+            firstAvailableSelected = true;
+          }
+          chip.onclick = () => selectTime(chip, slot);
+        }
+        container.appendChild(chip);
+      });
+
+      if (!firstAvailableSelected) {
+        orderState.time = "";
+      }
+    }
+
+    function goToStep(step) {
+      currentStep = step;
+      document.querySelectorAll('.step-screen').forEach((s, idx) => {
+        s.classList.toggle('active', idx + 1 === step);
+      });
+
+      for (let i = 1; i <= 4; i++) {
+        const tick = document.getElementById(`tick-${i}`);
+        if (tick) tick.classList.toggle('active', i <= step);
+      }
+      document.getElementById('step-counter').innerText = `Шаг ${step} из 4`;
+
+      if (step > 1) {
+        tg.BackButton.show();
+      } else {
+        tg.BackButton.hide();
+      }
+
+      tg.MainButton.color = "#2563eb";
+      tg.MainButton.textColor = "#ffffff";
+
+      if (step === 3) {
+        loadBookedSlotsFromAPI();
+      }
+
+      if (step === 4) {
+        document.getElementById('sum-service').innerText = orderState.service;
+        document.getElementById('sum-master').innerText = orderState.master;
+        document.getElementById('sum-date').innerText = orderState.dateFormatted;
+        document.getElementById('sum-time').innerText = orderState.time || "Не выбрано";
+        document.getElementById('sum-price').innerText = `${orderState.price} ₽`;
+
+        if (!orderState.time) {
+          tg.MainButton.setText("НЕТ СВОБОДНЫХ СЛОТОВ");
+          tg.MainButton.disable();
+          return;
+        } else {
+          tg.MainButton.enable();
+          tg.MainButton.setText(`ПОДТВЕРДИТЬ ЗАПИСЬ • ${orderState.price} ₽`);
+        }
+      } else {
+        tg.MainButton.enable();
+        tg.MainButton.setText("ДАЛЕЕ");
+      }
+      tg.MainButton.show();
+    }
+
+    tg.BackButton.onClick(() => {
+      if (currentStep > 1) goToStep(currentStep - 1);
     });
-    if (res.ok) {
-      await loadMastersFromAPI();
-      alert("Мастер успешно сохранен в базе!");
+
+    tg.MainButton.onClick(() => {
+      if (currentStep < 4) {
+        if (currentStep === 3 && !orderState.time) {
+          alert("Пожалуйста, выберите свободное время для записи.");
+          return;
+        }
+        goToStep(currentStep + 1);
+      } else {
+        submitBooking();
+      }
+    });
+
+    function selectService(el, name, price) {
+      document.querySelectorAll('#step-1 .glass-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      orderState.service = name;
+      orderState.price = price;
     }
-  } catch (err) {
-    alert("Ошибка при сохранении мастера");
-  }
-}
+
+    function selectMaster(el, name) {
+      document.querySelectorAll('#step-2 .glass-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      orderState.master = name;
+    }
+
+    function selectTime(el, time) {
+      document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      orderState.time = time;
+    }
+
+    // Скрытый вход владельца / мастера
+    let pressTimer;
+    const trigger = document.getElementById('secret-trigger');
+    if (trigger) {
+      trigger.addEventListener('touchstart', startPress);
+      trigger.addEventListener('touchend', cancelPress);
+      trigger.addEventListener('mousedown', startPress);
+      trigger.addEventListener('mouseup', cancelPress);
+    }
+
+    function startPress() {
+      pressTimer = setTimeout(() => {
+        document.getElementById('auth-modal').classList.add('show');
+        document.getElementById('staff-pin').focus();
+      }, 1500);
+    }
+
+    function cancelPress() {
+      clearTimeout(pressTimer);
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.remove('show');
+      document.getElementById('staff-pin').value = '';
+    }
+
+    function verifyPin() {
+      const pin = document.getElementById('staff-pin').value.trim();
+      closeAuthModal();
+
+      if (pin === OWNER_PIN) {
+        openStaffScreen('screen-owner');
+      } else {
+        const foundMaster = mastersData.find(m => m.pin === pin);
+        if (foundMaster) {
+          document.getElementById('barber-screen-title').innerText = `Смена: ${foundMaster.name}`;
+          openStaffScreen('screen-barber');
+        } else {
+          alert('Неверный код доступа');
+        }
+      }
+    }
+
+    function openStaffScreen(screenId) {
+      document.querySelectorAll('.step-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('progress-bar').style.display = 'none';
+      document.getElementById('step-counter').style.display = 'none';
+      tg.MainButton.hide();
+      tg.BackButton.hide();
+
+      document.querySelectorAll('.staff-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+    }
+
+    function exitStaffMode() {
+      document.querySelectorAll('.staff-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('progress-bar').style.display = 'flex';
+      document.getElementById('step-counter').style.display = 'block';
+      goToStep(1);
+    }
+
+    async function openAddMasterPrompt() {
+      const name = prompt("Имя мастера:");
+      if (!name) return;
+      const role = prompt("Квалификация (Barber / Top Barber):", "Barber") || "Barber";
+      const pin = prompt("Персональный 4-значный PIN:", "0000") || "0000";
+      const startDate = prompt("Дата выхода (ГГГГ-ММ-ДД):", new Date().toISOString().split('T')[0]);
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/masters`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name,
+            role_title: role,
+            pin_code: pin,
+            hired_at: startDate
+          })
+        });
+        if (res.ok) {
+          await loadMastersFromAPI();
+          alert("Мастер успешно сохранен в базе!");
+        }
+      } catch (err) {
+        alert("Ошибка при сохранении мастера");
+      }
+    }
+
+    // Инициализация интерфейса
+    loadMastersFromAPI();
+    setupDaysCarousel();
+    goToStep(1);
+  </script>
+</body>
+</html>
 </body>
 </html>
