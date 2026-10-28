@@ -8,17 +8,14 @@
   <style>
     :root {
       --bg: #05070a;
-      --glass-surface: rgba(20, 24, 33, 0.65);
-      --glass-border: rgba(255, 255, 255, 0.09);
-      --glass-glow: rgba(37, 99, 235, 0.2);
+      --glass-surface: rgba(20, 24, 33, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-glow: rgba(37, 99, 235, 0.25);
       --accent-blue: #2563eb;
-      --accent-blue-hover: #1d4ed8;
       --text-white: #ffffff;
       --text-dim: #94a3b8;
-      --disabled-bg: rgba(255, 255, 255, 0.03);
+      --disabled-bg: rgba(255, 255, 255, 0.02);
       --disabled-text: #475569;
-      --danger: #ef4444;
-      --success: #10b981;
     }
 
     * {
@@ -30,10 +27,10 @@
     body {
       margin: 0;
       padding: 16px 16px calc(24px + env(safe-area-inset-bottom)) 16px;
-      background: radial-gradient(circle at 50% 0%, #0d1527 0%, var(--bg) 75%);
+      background: radial-gradient(circle at 50% 0%, #0d1527 0%, var(--bg) 80%);
       min-height: 100vh;
       color: var(--text-white);
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
       user-select: none;
     }
 
@@ -55,12 +52,6 @@
       -webkit-backdrop-filter: blur(25px);
       border-radius: 30px;
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      transition: transform 0.15s ease;
-    }
-
-    .brand-pill:active {
-      transform: scale(0.96);
     }
 
     .brand-dot {
@@ -99,7 +90,7 @@
 
     .step-screen {
       display: none;
-      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: fadeIn 0.25s ease forwards;
     }
 
     .step-screen.active {
@@ -107,7 +98,7 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -133,18 +124,12 @@
       padding: 16px;
       margin-bottom: 12px;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-      position: relative;
-    }
-
-    .glass-card:active {
-      transform: scale(0.98);
+      transition: all 0.2s ease;
     }
 
     .glass-card.selected {
       border-color: var(--accent-blue);
-      background: rgba(37, 99, 235, 0.14);
+      background: rgba(37, 99, 235, 0.15);
       box-shadow: 0 0 20px var(--glass-glow);
     }
 
@@ -185,7 +170,7 @@
       display: flex;
       gap: 10px;
       overflow-x: auto;
-      padding-bottom: 6px;
+      padding-bottom: 8px;
       margin-bottom: 22px;
       scrollbar-width: none;
     }
@@ -195,14 +180,12 @@
       min-width: 68px;
       background: var(--glass-surface);
       border: 1px solid var(--glass-border);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
       border-radius: 16px;
       padding: 12px 6px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s ease;
       flex-shrink: 0;
+      transition: all 0.2s ease;
     }
 
     .day-card.selected {
@@ -219,7 +202,7 @@
     }
 
     .day-card.selected .day-card-wday {
-      color: rgba(255, 255, 255, 0.85);
+      color: #fff;
     }
 
     .day-card-num {
@@ -243,7 +226,6 @@
       font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s ease;
     }
 
     .time-chip.selected {
@@ -260,7 +242,6 @@
       cursor: not-allowed;
       text-decoration: line-through;
       pointer-events: none;
-      box-shadow: none;
     }
 
     .summary-card {
@@ -309,7 +290,6 @@
       width: 100%;
       max-width: 340px;
       text-align: center;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
     }
 
     .pin-input {
@@ -339,7 +319,7 @@
 
     .staff-screen { display: none; }
     .staff-screen.active { display: block; }
-    
+
     .badge-experience {
       display: inline-block;
       font-size: 0.75rem;
@@ -353,7 +333,6 @@
 </head>
 <body>
 
-  <!-- Верхняя навигационная строка -->
   <div class="top-nav">
     <div class="brand-pill" id="secret-trigger">
       <div class="brand-dot"></div>
@@ -362,7 +341,6 @@
     <div id="step-counter" style="font-size: 0.8rem; color: var(--text-dim);">Шаг 1 из 4</div>
   </div>
 
-  <!-- Индикатор шагов -->
   <div class="progress-bar-wrap" id="progress-bar">
     <div class="step-tick active" id="tick-1"></div>
     <div class="step-tick" id="tick-2"></div>
@@ -370,7 +348,7 @@
     <div class="step-tick" id="tick-4"></div>
   </div>
 
-  <!-- ШАГ 1: ВЫБОР УСЛУГИ -->
+  <!-- ШАГ 1 -->
   <div class="step-screen active" id="step-1">
     <h1 class="step-title">Выберите услугу</h1>
     <div class="step-desc">Профессиональный уход и стиль</div>
@@ -406,12 +384,12 @@
     </div>
   </div>
 
-  <!-- ШАГ 2: ВЫБОР МАСТЕРА -->
+  <!-- ШАГ 2 -->
   <div class="step-screen" id="step-2">
     <h1 class="step-title">Выберите мастера</h1>
     <div class="step-desc">Специалисты с безупречной техникой</div>
 
-    <div class="glass-card selected" id="any-master-card" onclick="selectMaster(this, 'Любой свободный')">
+    <div class="glass-card selected" id="card-master-any" onclick="selectMaster(this, 'Любой свободный')">
       <div class="master-item">
         <div class="master-avatar">⚡</div>
         <div class="master-info">
@@ -424,23 +402,21 @@
     <div id="masters-list-client"></div>
   </div>
 
-  <!-- ШАГ 3: ДАТА И ВРЕМЯ -->
+  <!-- ШАГ 3 -->
   <div class="step-screen" id="step-3">
     <h1 class="step-title">Дата и время</h1>
     <div class="step-desc">Выберите удобный день визита</div>
 
-    <!-- Карусель дней -->
     <div class="days-carousel" id="days-carousel"></div>
 
     <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600;">
       Доступное время
     </div>
 
-    <!-- Сетка времени -->
     <div class="time-grid" id="time-slots-container"></div>
   </div>
 
-  <!-- ШАГ 4: ПОДТВЕРЖДЕНИЕ -->
+  <!-- ШАГ 4 -->
   <div class="step-screen" id="step-4">
     <h1 class="step-title">Проверьте запись</h1>
     <div class="step-desc">Финальные детали вашего визита</div>
@@ -507,7 +483,7 @@
     </div>
   </div>
 
-  <!-- МОДАЛЬНОЕ ОКНО PIN -->
+  <!-- PIN МОДАЛКА -->
   <div class="modal-backdrop" id="auth-modal">
     <div class="modal-window">
       <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">Служебный вход</div>
@@ -519,16 +495,17 @@
   </div>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
 
-    // Вставь актуальную ссылку на свой туннель Cloudflare:
     const API_BASE_URL = "https://hardware-eliminate-clock-curves.trycloudflare.com";
     const OWNER_PIN = "7777";
     let currentStep = 1;
 
-    // Базовый список мастеров (отображается всегда, даже если API выключен)
+    // Гарантированные мастера при старте
     let mastersData = [
       { id: 1, name: "Магомед", role: "Top Barber", pin: "1111", startDate: "2025-11-15" },
       { id: 2, name: "Али", role: "Barber", pin: "2222", startDate: "2026-03-01" }
@@ -541,90 +518,23 @@
 
     let bookedSlots = [];
 
+    // Хелпер получения даты YYYY-MM-DD строго в локальном времени
+    function getLocalDateString(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     let orderState = {
       service: "Мужская стрижка",
       price: 1200,
       master: "Любой свободный",
       dateFormatted: "Сегодня",
-      dateIso: "",
+      dateIso: getLocalDateString(new Date()),
       time: ""
     };
 
-    // 1. Загрузка мастеров из FastAPI/SQLite с гарантированным показом
-    async function loadMastersFromAPI() {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/masters`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            mastersData = data;
-          }
-        }
-      } catch (err) {
-        console.warn("API временно недоступен, используется резервный список мастеров:", err);
-      } finally {
-        renderMasters();
-      }
-    }
-
-    // 2. Загрузка занятых слотов
-    async function loadBookedSlotsFromAPI() {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/booked-slots?date=${encodeURIComponent(orderState.dateFormatted)}`);
-        if (res.ok) {
-          const data = await res.json();
-          bookedSlots = data.slots.map(time => `${orderState.dateIso}_${time}`);
-        }
-      } catch (err) {
-        console.warn("Слоты из API не получены, загрузка по умолчанию:", err);
-      } finally {
-        renderTimeSlots();
-      }
-    }
-
-    // 3. Отправка бронирования
-    async function submitBooking() {
-      const payload = {
-        client_tg_id: tg.initDataUnsafe?.user?.id || 0,
-        client_name: tg.initDataUnsafe?.user?.first_name || "Гость",
-        service_name: orderState.service,
-        master_name: orderState.master,
-        visit_date: orderState.dateFormatted,
-        time_slot: orderState.time,
-        total_price: orderState.price
-      };
-
-      tg.MainButton.showProgress();
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/book`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        tg.MainButton.hideProgress();
-
-        if (res.ok) {
-          tg.showPopup({
-            title: "Успешно!",
-            message: `Вы записаны на ${orderState.dateFormatted} в ${orderState.time}`,
-            buttons: [{ type: "ok" }]
-          }, () => {
-            tg.close();
-          });
-        } else {
-          const err = await res.json();
-          alert(err.detail || "Не удалось забронировать время");
-        }
-      } catch (e) {
-        tg.MainButton.hideProgress();
-        // Запасной вариант — отправка через Telegram WebAppData
-        tg.sendData(JSON.stringify(orderState));
-      }
-    }
-
-    // Расчет стажа мастеров
     function calculateTenure(dateStr) {
       const start = new Date(dateStr);
       const now = new Date();
@@ -649,6 +559,7 @@
       return res.join(" ");
     }
 
+    // Мгновенная отрисовка мастеров
     function renderMasters() {
       const clientBox = document.getElementById('masters-list-client');
       const ownerBox = document.getElementById('owner-masters-list');
@@ -658,6 +569,7 @@
       ownerBox.innerHTML = '';
 
       mastersData.forEach(m => {
+        // Карточка для клиента
         const card = document.createElement('div');
         card.className = 'glass-card';
         card.onclick = () => selectMaster(card, m.name);
@@ -672,6 +584,7 @@
         `;
         clientBox.appendChild(card);
 
+        // Карточка для панели владельца
         const tenure = calculateTenure(m.startDate);
         const ownerCard = document.createElement('div');
         ownerCard.className = 'glass-card';
@@ -688,7 +601,26 @@
       });
     }
 
-    // Создание ленты дней
+    // Фоновая подгрузка из API
+    async function loadMastersFromAPI() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 сек таймаут
+        const res = await fetch(`${API_BASE_URL}/api/masters`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            mastersData = data;
+            renderMasters();
+          }
+        }
+      } catch (err) {
+        console.log("Используем локальный список мастеров:", err.message);
+      }
+    }
+
     function setupDaysCarousel() {
       const carousel = document.getElementById('days-carousel');
       if (!carousel) return;
@@ -700,11 +632,7 @@
         const d = new Date();
         d.setDate(d.getDate() + i);
 
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const iso = `${year}-${month}-${day}`;
-
+        const iso = getLocalDateString(d);
         const dayLabel = i === 0 ? 'Сегодня' : (i === 1 ? 'Завтра' : wDays[d.getDay()]);
         const dayNum = d.getDate();
         const fullFormatted = `${dayLabel}, ${dayNum} ${mNames[d.getMonth()]}`;
@@ -726,54 +654,54 @@
           card.classList.add('selected');
           orderState.dateFormatted = fullFormatted;
           orderState.dateIso = iso;
-          loadBookedSlotsFromAPI();
+          renderTimeSlots();
         };
 
         carousel.appendChild(card);
       }
     }
 
-    // Корректный расчет времени: блокировка ТОЛЬКО прошедших часов СЕГОДНЯ
+    // Корректная фильтрация слотов
     function renderTimeSlots() {
       const container = document.getElementById('time-slots-container');
       if (!container) return;
       container.innerHTML = '';
 
       const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const currentIso = `${year}-${month}-${day}`;
+      const todayIso = getLocalDateString(now);
       const currentHour = now.getHours();
 
-      const isToday = (orderState.dateIso === currentIso);
-      let firstAvailableSelected = false;
+      // Проверка: совпадает ли дата кнопки с текущей системной датой
+      const isToday = (orderState.dateIso === todayIso);
+
+      let firstFound = false;
 
       allScheduleSlots.forEach(slot => {
         const chip = document.createElement('div');
         chip.className = 'time-chip';
         chip.innerText = slot;
 
-        const [slotH] = slot.split(':').map(Number);
-        
-        // Время блокируется только если это СЕГОДНЯ и час уже наступил
-        const isPast = isToday && (slotH <= currentHour);
+        const slotHour = parseInt(slot.split(':')[0], 10);
+
+        // Блокируем только если это сегодня и час уже наступил
+        const isPast = isToday && (slotHour <= currentHour);
         const isBooked = bookedSlots.includes(`${orderState.dateIso}_${slot}`);
 
         if (isPast || isBooked) {
           chip.classList.add('disabled');
         } else {
-          if (!firstAvailableSelected) {
+          if (!firstFound) {
             chip.classList.add('selected');
             orderState.time = slot;
-            firstAvailableSelected = true;
+            firstFound = true;
           }
           chip.onclick = () => selectTime(chip, slot);
         }
+
         container.appendChild(chip);
       });
 
-      if (!firstAvailableSelected) {
+      if (!firstFound) {
         orderState.time = "";
       }
     }
@@ -790,56 +718,56 @@
       }
       document.getElementById('step-counter').innerText = `Шаг ${step} из 4`;
 
-      if (step > 1) {
-        tg.BackButton.show();
-      } else {
-        tg.BackButton.hide();
-      }
+      if (tg) {
+        if (step > 1) tg.BackButton.show();
+        else tg.BackButton.hide();
 
-      tg.MainButton.color = "#2563eb";
-      tg.MainButton.textColor = "#ffffff";
+        tg.MainButton.color = "#2563eb";
+        tg.MainButton.textColor = "#ffffff";
 
-      if (step === 3) {
-        loadBookedSlotsFromAPI();
-      }
+        if (step === 3) {
+          renderTimeSlots();
+        }
 
-      if (step === 4) {
-        document.getElementById('sum-service').innerText = orderState.service;
-        document.getElementById('sum-master').innerText = orderState.master;
-        document.getElementById('sum-date').innerText = orderState.dateFormatted;
-        document.getElementById('sum-time').innerText = orderState.time || "Не выбрано";
-        document.getElementById('sum-price').innerText = `${orderState.price} ₽`;
+        if (step === 4) {
+          document.getElementById('sum-service').innerText = orderState.service;
+          document.getElementById('sum-master').innerText = orderState.master;
+          document.getElementById('sum-date').innerText = orderState.dateFormatted;
+          document.getElementById('sum-time').innerText = orderState.time || "Не выбрано";
+          document.getElementById('sum-price').innerText = `${orderState.price} ₽`;
 
-        if (!orderState.time) {
-          tg.MainButton.setText("НЕТ СВОБОДНЫХ СЛОТОВ");
-          tg.MainButton.disable();
-          return;
+          if (!orderState.time) {
+            tg.MainButton.setText("НЕТ СВОБОДНЫХ СЛОТОВ");
+            tg.MainButton.disable();
+          } else {
+            tg.MainButton.enable();
+            tg.MainButton.setText(`ПОДТВЕРДИТЬ ЗАПИСЬ • ${orderState.price} ₽`);
+          }
         } else {
           tg.MainButton.enable();
-          tg.MainButton.setText(`ПОДТВЕРДИТЬ ЗАПИСЬ • ${orderState.price} ₽`);
+          tg.MainButton.setText("ДАЛЕЕ");
         }
-      } else {
-        tg.MainButton.enable();
-        tg.MainButton.setText("ДАЛЕЕ");
+        tg.MainButton.show();
       }
-      tg.MainButton.show();
     }
 
-    tg.BackButton.onClick(() => {
-      if (currentStep > 1) goToStep(currentStep - 1);
-    });
+    if (tg) {
+      tg.BackButton.onClick(() => {
+        if (currentStep > 1) goToStep(currentStep - 1);
+      });
 
-    tg.MainButton.onClick(() => {
-      if (currentStep < 4) {
-        if (currentStep === 3 && !orderState.time) {
-          alert("Пожалуйста, выберите свободное время для записи.");
-          return;
+      tg.MainButton.onClick(() => {
+        if (currentStep < 4) {
+          if (currentStep === 3 && !orderState.time) {
+            alert("Пожалуйста, выберите свободное время для записи.");
+            return;
+          }
+          goToStep(currentStep + 1);
+        } else {
+          tg.sendData(JSON.stringify(orderState));
         }
-        goToStep(currentStep + 1);
-      } else {
-        submitBooking();
-      }
-    });
+      });
+    }
 
     function selectService(el, name, price) {
       document.querySelectorAll('#step-1 .glass-card').forEach(c => c.classList.remove('selected'));
@@ -860,25 +788,23 @@
       orderState.time = time;
     }
 
-    // Скрытый вход владельца / мастера
+    // Секретный вход
     let pressTimer;
     const trigger = document.getElementById('secret-trigger');
     if (trigger) {
-      trigger.addEventListener('touchstart', startPress);
-      trigger.addEventListener('touchend', cancelPress);
-      trigger.addEventListener('mousedown', startPress);
-      trigger.addEventListener('mouseup', cancelPress);
+      trigger.addEventListener('touchstart', () => {
+        pressTimer = setTimeout(openAuthModal, 1500);
+      });
+      trigger.addEventListener('touchend', () => clearTimeout(pressTimer));
+      trigger.addEventListener('mousedown', () => {
+        pressTimer = setTimeout(openAuthModal, 1500);
+      });
+      trigger.addEventListener('mouseup', () => clearTimeout(pressTimer));
     }
 
-    function startPress() {
-      pressTimer = setTimeout(() => {
-        document.getElementById('auth-modal').classList.add('show');
-        document.getElementById('staff-pin').focus();
-      }, 1500);
-    }
-
-    function cancelPress() {
-      clearTimeout(pressTimer);
+    function openAuthModal() {
+      document.getElementById('auth-modal').classList.add('show');
+      document.getElementById('staff-pin').focus();
     }
 
     function closeAuthModal() {
@@ -893,9 +819,9 @@
       if (pin === OWNER_PIN) {
         openStaffScreen('screen-owner');
       } else {
-        const foundMaster = mastersData.find(m => m.pin === pin);
-        if (foundMaster) {
-          document.getElementById('barber-screen-title').innerText = `Смена: ${foundMaster.name}`;
+        const found = mastersData.find(m => m.pin === pin);
+        if (found) {
+          document.getElementById('barber-screen-title').innerText = `Смена: ${found.name}`;
           openStaffScreen('screen-barber');
         } else {
           alert('Неверный код доступа');
@@ -907,9 +833,10 @@
       document.querySelectorAll('.step-screen').forEach(s => s.classList.remove('active'));
       document.getElementById('progress-bar').style.display = 'none';
       document.getElementById('step-counter').style.display = 'none';
-      tg.MainButton.hide();
-      tg.BackButton.hide();
-
+      if (tg) {
+        tg.MainButton.hide();
+        tg.BackButton.hide();
+      }
       document.querySelectorAll('.staff-screen').forEach(s => s.classList.remove('active'));
       document.getElementById(screenId).classList.add('active');
     }
@@ -921,37 +848,29 @@
       goToStep(1);
     }
 
-    async function openAddMasterPrompt() {
+    function openAddMasterPrompt() {
       const name = prompt("Имя мастера:");
       if (!name) return;
       const role = prompt("Квалификация (Barber / Top Barber):", "Barber") || "Barber";
       const pin = prompt("Персональный 4-значный PIN:", "0000") || "0000";
-      const startDate = prompt("Дата выхода (ГГГГ-ММ-ДД):", new Date().toISOString().split('T')[0]);
+      const startDate = prompt("Дата выхода (ГГГГ-ММ-ДД):", getLocalDateString(new Date()));
 
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/masters`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name,
-            role_title: role,
-            pin_code: pin,
-            hired_at: startDate
-          })
-        });
-        if (res.ok) {
-          await loadMastersFromAPI();
-          alert("Мастер успешно сохранен в базе!");
-        }
-      } catch (err) {
-        alert("Ошибка при сохранении мастера");
-      }
+      mastersData.push({
+        id: Date.now(),
+        name,
+        role,
+        pin,
+        startDate
+      });
+      renderMasters();
     }
 
-    // Инициализация стартового состояния
-    loadMastersFromAPI();
+    // СТАРТ: сначала рисуем интерфейс, потом в фоне опрашиваем API
+    renderMasters();
     setupDaysCarousel();
+    renderTimeSlots();
     goToStep(1);
+    loadMastersFromAPI();
   </script>
 </body>
 </html>
