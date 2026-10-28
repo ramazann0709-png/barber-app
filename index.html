@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Barbershop App</title>
+  <title>Barber Club</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -181,7 +181,6 @@
     .master-title { font-weight: 600; font-size: 0.95rem; }
     .master-role { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
 
-    /* Надежная лента выбора дней (Glass Day Picker) */
     .days-carousel {
       display: flex;
       gap: 10px;
@@ -229,7 +228,6 @@
       margin-top: 4px;
     }
 
-    /* Сетка времени и блокировка прошедших/занятых часов */
     .time-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -255,7 +253,6 @@
       color: #fff;
     }
 
-    /* Стиль заблокированных часов (уже прошло или занято) */
     .time-chip.disabled {
       background: var(--disabled-bg);
       border-color: rgba(255, 255, 255, 0.04);
@@ -356,6 +353,7 @@
 </head>
 <body>
 
+  <!-- Верхняя навигационная строка -->
   <div class="top-nav">
     <div class="brand-pill" id="secret-trigger">
       <div class="brand-dot"></div>
@@ -364,6 +362,7 @@
     <div id="step-counter" style="font-size: 0.8rem; color: var(--text-dim);">Шаг 1 из 4</div>
   </div>
 
+  <!-- Индикатор шагов -->
   <div class="progress-bar-wrap" id="progress-bar">
     <div class="step-tick active" id="tick-1"></div>
     <div class="step-tick" id="tick-2"></div>
@@ -412,7 +411,7 @@
     <h1 class="step-title">Выберите мастера</h1>
     <div class="step-desc">Специалисты с безупречной техникой</div>
 
-    <div class="glass-card selected" onclick="selectMaster(this, 'Любой свободный')">
+    <div class="glass-card selected" id="any-master-card" onclick="selectMaster(this, 'Любой свободный')">
       <div class="master-item">
         <div class="master-avatar">⚡</div>
         <div class="master-info">
@@ -430,14 +429,14 @@
     <h1 class="step-title">Дата и время</h1>
     <div class="step-desc">Выберите удобный день визита</div>
 
-    <!-- Горизонтальный стек дней без сбоев Webview -->
+    <!-- Карусель дней -->
     <div class="days-carousel" id="days-carousel"></div>
 
     <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600;">
       Доступное время
     </div>
 
-    <!-- Сетка слотов (фильтруется по времени и занятости) -->
+    <!-- Сетка времени -->
     <div class="time-grid" id="time-slots-container"></div>
   </div>
 
@@ -519,17 +518,17 @@
     </div>
   </div>
 
- <script>
+  <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
 
-    // Адрес твоего активного туннеля Cloudflare
+    // Вставь актуальную ссылку на свой туннель Cloudflare:
     const API_BASE_URL = "https://hardware-eliminate-clock-curves.trycloudflare.com";
     const OWNER_PIN = "7777";
     let currentStep = 1;
 
-    // Список мастеров (по умолчанию, пока подгружаются данные из базы)
+    // Базовый список мастеров (отображается всегда, даже если API выключен)
     let mastersData = [
       { id: 1, name: "Магомед", role: "Top Barber", pin: "1111", startDate: "2025-11-15" },
       { id: 2, name: "Али", role: "Barber", pin: "2222", startDate: "2026-03-01" }
@@ -551,36 +550,39 @@
       time: ""
     };
 
-    // 1. Загрузка мастеров из FastAPI/SQLite
+    // 1. Загрузка мастеров из FastAPI/SQLite с гарантированным показом
     async function loadMastersFromAPI() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/masters`);
         if (res.ok) {
-          mastersData = await res.json();
-          renderMasters();
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            mastersData = data;
+          }
         }
       } catch (err) {
-        console.error("Ошибка загрузки мастеров:", err);
+        console.warn("API временно недоступен, используется резервный список мастеров:", err);
+      } finally {
         renderMasters();
       }
     }
 
-    // 2. Загрузка занятых слотов с сервера на выбранную дату
+    // 2. Загрузка занятых слотов
     async function loadBookedSlotsFromAPI() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/booked-slots?date=${encodeURIComponent(orderState.dateFormatted)}`);
         if (res.ok) {
           const data = await res.json();
           bookedSlots = data.slots.map(time => `${orderState.dateIso}_${time}`);
-          renderTimeSlots();
         }
       } catch (err) {
-        console.error("Ошибка слотов:", err);
+        console.warn("Слоты из API не получены, загрузка по умолчанию:", err);
+      } finally {
         renderTimeSlots();
       }
     }
 
-    // 3. Отправка бронирования на сервер
+    // 3. Отправка бронирования
     async function submitBooking() {
       const payload = {
         client_tg_id: tg.initDataUnsafe?.user?.id || 0,
@@ -617,7 +619,8 @@
         }
       } catch (e) {
         tg.MainButton.hideProgress();
-        alert("Ошибка соединения с сервером");
+        // Запасной вариант — отправка через Telegram WebAppData
+        tg.sendData(JSON.stringify(orderState));
       }
     }
 
@@ -685,6 +688,7 @@
       });
     }
 
+    // Создание ленты дней
     function setupDaysCarousel() {
       const carousel = document.getElementById('days-carousel');
       if (!carousel) return;
@@ -696,7 +700,11 @@
         const d = new Date();
         d.setDate(d.getDate() + i);
 
-        const iso = d.toISOString().split('T')[0];
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const iso = `${year}-${month}-${day}`;
+
         const dayLabel = i === 0 ? 'Сегодня' : (i === 1 ? 'Завтра' : wDays[d.getDay()]);
         const dayNum = d.getDate();
         const fullFormatted = `${dayLabel}, ${dayNum} ${mNames[d.getMonth()]}`;
@@ -725,16 +733,20 @@
       }
     }
 
+    // Корректный расчет времени: блокировка ТОЛЬКО прошедших часов СЕГОДНЯ
     function renderTimeSlots() {
       const container = document.getElementById('time-slots-container');
       if (!container) return;
       container.innerHTML = '';
 
       const now = new Date();
-      const currentIso = now.toISOString().split('T')[0];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const currentIso = `${year}-${month}-${day}`;
       const currentHour = now.getHours();
-      const isToday = (orderState.dateIso === currentIso);
 
+      const isToday = (orderState.dateIso === currentIso);
       let firstAvailableSelected = false;
 
       allScheduleSlots.forEach(slot => {
@@ -743,6 +755,8 @@
         chip.innerText = slot;
 
         const [slotH] = slot.split(':').map(Number);
+        
+        // Время блокируется только если это СЕГОДНЯ и час уже наступил
         const isPast = isToday && (slotH <= currentHour);
         const isBooked = bookedSlots.includes(`${orderState.dateIso}_${slot}`);
 
@@ -934,12 +948,10 @@
       }
     }
 
-    // Инициализация интерфейса
+    // Инициализация стартового состояния
     loadMastersFromAPI();
     setupDaysCarousel();
     goToStep(1);
   </script>
-</body>
-</html>
 </body>
 </html>
