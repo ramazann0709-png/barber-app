@@ -2,490 +2,769 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Барбершоп</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Barbershop App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg: #0d0f12;
-      --surface: #16191f;
-      --surface-border: #232730;
-      --accent: #ffffff;
-      --accent-muted: #2a2f3a;
-      --text-main: #f3f4f6;
-      --text-sub: #8b92a0;
-      --tag-bg: rgba(255, 255, 255, 0.05);
+      --bg: #05070a;
+      --glass-surface: rgba(20, 24, 33, 0.65);
+      --glass-border: rgba(255, 255, 255, 0.09);
+      --glass-glow: rgba(37, 99, 235, 0.15);
+      --accent-blue: #2563eb;
+      --accent-blue-hover: #1d4ed8;
+      --text-white: #ffffff;
+      --text-dim: #94a3b8;
       --danger: #ef4444;
-      --success: #22c55e;
+      --success: #10b981;
     }
 
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+      outline: none;
     }
 
     body {
       margin: 0;
-      padding: 16px 16px 85px 16px;
-      background-color: var(--bg);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      padding: 16px 16px calc(24px + env(safe-area-inset-bottom)) 16px;
+      background: radial-gradient(circle at 50% 0%, #0d1527 0%, var(--bg) 75%);
+      min-height: 100vh;
+      color: var(--text-white);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
       user-select: none;
     }
 
-    /* Навигация внизу */
-    .tab-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 65px;
-      background: rgba(22, 25, 31, 0.95);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid var(--surface-border);
+    /* Верхняя панель и скрытый вход */
+    .top-nav {
       display: flex;
-      justify-content: space-around;
+      justify-content: space-between;
       align-items: center;
-      z-index: 100;
+      margin-bottom: 20px;
     }
 
-    .tab-btn {
-      display: flex;
-      flex-direction: column;
+    .brand-pill {
+      display: inline-flex;
       align-items: center;
-      gap: 4px;
-      background: none;
-      border: none;
-      color: var(--text-sub);
-      font-size: 0.72rem;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--glass-surface);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-radius: 30px;
       cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      transition: transform 0.15s ease;
+    }
+
+    .brand-pill:active {
+      transform: scale(0.96);
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      box-shadow: 0 0 10px var(--accent-blue);
+    }
+
+    .brand-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Индикатор шагов Wizard */
+    .progress-bar-wrap {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+
+    .step-tick {
+      height: 3px;
       flex: 1;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      transition: background 0.3s ease;
     }
 
-    .tab-btn.active {
-      color: var(--accent);
-      font-weight: 600;
+    .step-tick.active {
+      background: var(--accent-blue);
+      box-shadow: 0 0 8px var(--accent-blue);
     }
 
-    .tab-btn svg {
-      width: 22px;
-      height: 22px;
-      fill: currentColor;
-    }
-
-    .page {
+    /* Контейнеры шагов */
+    .step-screen {
       display: none;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    .page.active {
+    .step-screen.active {
       display: block;
     }
 
-    .section-label {
-      font-size: 0.78rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--text-sub);
-      font-weight: 600;
-      margin: 20px 0 10px 2px;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Календарь (горизонтальный скролл) */
-    .days-scroll {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: none;
-    }
-    .days-scroll::-webkit-scrollbar { display: none; }
-
-    .day-chip {
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: 12px;
-      padding: 10px 14px;
-      min-width: 60px;
-      text-align: center;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .day-chip.selected {
-      border-color: var(--accent);
-      background: #1b2028;
-    }
-
-    .day-chip-name {
-      font-size: 0.75rem;
-      color: var(--text-sub);
-      text-transform: uppercase;
-    }
-
-    .day-chip-num {
-      font-size: 1.1rem;
+    .step-title {
+      font-size: 1.55rem;
       font-weight: 700;
-      margin-top: 2px;
+      letter-spacing: -0.5px;
+      margin: 0 0 6px 0;
+    }
+
+    .step-desc {
+      font-size: 0.86rem;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+
+    /* Жидкое стекло (Glass Card) */
+    .glass-card {
+      background: var(--glass-surface);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      position: relative;
+    }
+
+    .glass-card:active {
+      transform: scale(0.98);
+    }
+
+    .glass-card.selected {
+      border-color: var(--accent-blue);
+      background: rgba(37, 99, 235, 0.12);
+      box-shadow: 0 0 20px var(--glass-glow);
     }
 
     /* Услуги */
-    .service-card {
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: 14px;
-      padding: 15px;
+    .service-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      cursor: pointer;
-      margin-bottom: 8px;
     }
-
-    .service-card.selected {
-      border-color: var(--accent);
-      background: #1b2028;
-    }
-
-    .service-name { font-weight: 600; font-size: 0.95rem; }
-    .service-meta { font-size: 0.8rem; color: var(--text-sub); margin-top: 3px; }
-    .service-price { font-weight: 700; font-size: 1rem; }
+    .service-name { font-weight: 600; font-size: 1rem; }
+    .service-meta { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+    .service-price { font-weight: 700; font-size: 1.05rem; }
 
     /* Мастера */
-    .masters-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    .master-card {
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: 14px;
-      padding: 12px 6px;
-      text-align: center;
-      cursor: pointer;
-    }
-
-    .master-card.selected {
-      border-color: var(--accent);
-      background: #1b2028;
+    .master-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
 
     .master-avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: var(--accent-muted);
-      margin: 0 auto 6px auto;
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--glass-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent-blue);
     }
 
-    /* Слоты времени */
+    .master-info { flex: 1; }
+    .master-title { font-weight: 600; font-size: 0.95rem; }
+    .master-role { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
+
+    /* Нативный Datepicker в стекле */
+    .date-box {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .native-input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Сетка слотов времени */
     .time-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
+      gap: 10px;
     }
 
-    .time-item {
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: 10px;
-      padding: 11px 0;
+    .time-chip {
+      background: var(--glass-surface);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 13px 0;
       text-align: center;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
+      transition: all 0.15s ease;
     }
 
-    .time-item.selected {
-      border-color: var(--accent);
-      background: var(--accent);
-      color: #000;
+    .time-chip.selected {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 15px var(--accent-blue);
+      color: #fff;
+    }
+
+    /* Экран резюме */
+    .summary-card {
+      background: var(--glass-surface);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+    }
+
+    .summary-line.total {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--glass-border);
+      font-size: 1.1rem;
       font-weight: 700;
     }
 
-    /* Аналитика и Заказы (Админка) */
-    .stat-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 16px;
+    /* Модальное окно скрытого входа (PIN) */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
     }
 
-    .stat-box {
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: 14px;
-      padding: 16px;
+    .modal-backdrop.show { display: flex; }
+
+    .modal-window {
+      background: #0f141c;
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 24px;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
     }
 
-    .stat-val { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
-    .stat-sub { font-size: 0.75rem; color: var(--text-sub); }
-
-    .admin-order-card {
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: 14px;
+    .pin-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
       padding: 14px;
-      margin-bottom: 10px;
+      font-size: 1.2rem;
+      text-align: center;
+      color: #fff;
+      letter-spacing: 6px;
+      margin: 16px 0;
     }
 
-    .order-header {
-      display: flex;
-      justify-content: space-between;
+    .btn-blue {
+      width: 100%;
+      background: var(--accent-blue);
+      border: none;
+      color: #fff;
+      padding: 14px;
       font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    .order-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .btn-action {
-      flex: 1;
-      padding: 8px 0;
-      border-radius: 8px;
-      border: 1px solid var(--surface-border);
-      background: var(--accent-muted);
-      color: var(--text-main);
-      font-size: 0.78rem;
-      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 12px;
       cursor: pointer;
     }
 
-    .btn-action.done {
-      background: var(--success);
-      color: #000;
-      border: none;
+    /* Кабинеты персонала */
+    .staff-screen { display: none; }
+    .staff-screen.active { display: block; }
+    
+    .badge-experience {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(37, 99, 235, 0.15);
+      color: #60a5fa;
+      margin-top: 6px;
     }
   </style>
 </head>
 <body>
 
-  <!-- ВКЛАДКА 1: ЗАПИСЬ -->
-  <div id="page-book" class="page active">
-    <div style="margin-bottom: 16px;">
-      <h1 style="font-size: 1.4rem; margin: 0;">Онлайн-запись</h1>
-      <div style="font-size: 0.82rem; color: var(--text-sub); margin-top: 4px;">Выберите день, услугу и мастера</div>
+  <!-- Верхняя строка (с секретным триггером) -->
+  <div class="top-nav">
+    <div class="brand-pill" id="secret-trigger">
+      <div class="brand-dot"></div>
+      <span class="brand-name">Barber Club</span>
     </div>
+    <div id="step-counter" style="font-size: 0.8rem; color: var(--text-dim);">Шаг 1 из 4</div>
+  </div>
 
-    <div class="section-label">Дата визита</div>
-    <div class="days-scroll" id="days-container"></div>
+  <!-- Индикатор прогресса -->
+  <div class="progress-bar-wrap" id="progress-bar">
+    <div class="step-tick active" id="tick-1"></div>
+    <div class="step-tick" id="tick-2"></div>
+    <div class="step-tick" id="tick-3"></div>
+    <div class="step-tick" id="tick-4"></div>
+  </div>
 
-    <div class="section-label">Услуга</div>
-    <div id="services-container">
-      <div class="service-card selected" onclick="setService(this, 'Мужская стрижка', 1200)">
+  <!-- ШАГ 1: ВЫБОР УСЛУГИ -->
+  <div class="step-screen active" id="step-1">
+    <h1 class="step-title">Выберите услугу</h1>
+    <div class="step-desc">Профессиональный уход и стиль</div>
+
+    <div class="glass-card selected" onclick="selectService(this, 'Мужская стрижка', 1200)">
+      <div class="service-row">
         <div>
           <div class="service-name">Мужская стрижка</div>
-          <div class="service-meta">45 мин • Мытье и укладка</div>
+          <div class="service-meta">45 мин • Мытье, форма и стайлинг</div>
         </div>
         <div class="service-price">1 200 ₽</div>
       </div>
-      <div class="service-card" onclick="setService(this, 'Моделирование бороды', 700)">
+    </div>
+
+    <div class="glass-card" onclick="selectService(this, 'Моделирование бороды', 700)">
+      <div class="service-row">
         <div>
           <div class="service-name">Моделирование бороды</div>
-          <div class="service-meta">30 мин • Окантовка и уход</div>
+          <div class="service-meta">30 мин • Окантовка, бритва и масло</div>
         </div>
         <div class="service-price">700 ₽</div>
       </div>
-      <div class="service-card" onclick="setService(this, 'Стрижка + Борода', 1700)">
+    </div>
+
+    <div class="glass-card" onclick="selectService(this, 'Комплекс (Стрижка + Борода)', 1700)">
+      <div class="service-row">
         <div>
           <div class="service-name">Стрижка + Борода</div>
-          <div class="service-meta">75 мин • Полный комплекс</div>
+          <div class="service-meta">75 мин • Полный цикл ухода</div>
         </div>
         <div class="service-price">1 700 ₽</div>
       </div>
     </div>
+  </div>
 
-    <div class="section-label">Барбер</div>
-    <div class="masters-grid">
-      <div class="master-card selected" onclick="setMaster(this, 'Магомед')">
-        <div class="master-avatar">М</div>
-        <div style="font-size: 0.85rem; font-weight: 600;">Магомед</div>
-        <div style="font-size: 0.7rem; color: var(--text-sub);">Top Barber</div>
-      </div>
-      <div class="master-card" onclick="setMaster(this, 'Али')">
-        <div class="master-avatar">А</div>
-        <div style="font-size: 0.85rem; font-weight: 600;">Али</div>
-        <div style="font-size: 0.7rem; color: var(--text-sub);">Barber</div>
-      </div>
-      <div class="master-card" onclick="setMaster(this, 'Мурад')">
-        <div class="master-avatar">М</div>
-        <div style="font-size: 0.85rem; font-weight: 600;">Мурад</div>
-        <div style="font-size: 0.7rem; color: var(--text-sub);">Barber</div>
+  <!-- ШАГ 2: ВЫБОР МАСТЕРА -->
+  <div class="step-screen" id="step-2">
+    <h1 class="step-title">Выберите мастера</h1>
+    <div class="step-desc">Специалисты с безупречной техникой</div>
+
+    <div class="glass-card selected" onclick="selectMaster(this, 'Любой свободный')">
+      <div class="master-item">
+        <div class="master-avatar">⚡</div>
+        <div class="master-info">
+          <div class="master-title">Любой мастер</div>
+          <div class="master-role">Ближайшее свободное окно</div>
+        </div>
       </div>
     </div>
 
-    <div class="section-label">Время</div>
-    <div class="time-grid">
-      <div class="time-item selected" onclick="setTime(this, '11:00')">11:00</div>
-      <div class="time-item" onclick="setTime(this, '12:30')">12:30</div>
-      <div class="time-item" onclick="setTime(this, '14:00')">14:00</div>
-      <div class="time-item" onclick="setTime(this, '15:30')">15:30</div>
-      <div class="time-item" onclick="setTime(this, '17:00')">17:00</div>
-      <div class="time-item" onclick="setTime(this, '18:30')">18:30</div>
-      <div class="time-item" onclick="setTime(this, '20:00')">20:00</div>
+    <div id="masters-list-client">
+      <!-- Мастера подтягиваются динамически -->
     </div>
   </div>
 
-  <!-- ВКЛАДКА 2: МОИ ВИЗИТЫ -->
-  <div id="page-my-orders" class="page">
-    <h1 style="font-size: 1.4rem; margin: 0 0 16px 0;">Мои визиты</h1>
-    <div class="admin-order-card">
-      <div class="order-header">
-        <span>Мужская стрижка</span>
-        <span style="color: var(--success);">Подтверждено</span>
+  <!-- ШАГ 3: ДАТА И ВРЕМЯ -->
+  <div class="step-screen" id="step-3">
+    <h1 class="step-title">Дата и время</h1>
+    <div class="step-desc">Нажмите на дату, чтобы открыть календарь</div>
+
+    <div class="glass-card date-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div id="display-date-title" style="font-weight: 700; font-size: 1.05rem;">Сегодня</div>
+          <div id="display-date-sub" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Выбрать другой день ▾</div>
+        </div>
+        <div style="font-size: 1.3rem;">📅</div>
       </div>
-      <div style="font-size: 0.85rem; color: var(--text-sub);">Сегодня, 14:00 • Барбер: Магомед</div>
-      <div style="font-size: 0.9rem; font-weight: 700; margin-top: 8px;">1 200 ₽</div>
+      <input type="date" id="native-date-picker" class="native-input" onchange="handleDateChange(this)">
+    </div>
+
+    <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600;">
+      Свободное время
+    </div>
+
+    <div class="time-grid" id="time-slots-container">
+      <div class="time-chip selected" onclick="selectTime(this, '11:00')">11:00</div>
+      <div class="time-chip" onclick="selectTime(this, '12:30')">12:30</div>
+      <div class="time-chip" onclick="selectTime(this, '14:00')">14:00</div>
+      <div class="time-chip" onclick="selectTime(this, '15:30')">15:30</div>
+      <div class="time-chip" onclick="selectTime(this, '17:00')">17:00</div>
+      <div class="time-chip" onclick="selectTime(this, '18:30')">18:30</div>
+      <div class="time-chip" onclick="selectTime(this, '20:00')">20:00</div>
     </div>
   </div>
 
-  <!-- ВКЛАДКА 3: ПАНЕЛЬ УПРАВЛЕНИЯ (ТОЛЬКО ДЛЯ АДМИНА) -->
-  <div id="page-admin" class="page">
-    <h1 style="font-size: 1.4rem; margin: 0 0 16px 0;">Кабинет владельца</h1>
-    
-    <div class="stat-row">
-      <div class="stat-box">
-        <div class="stat-sub">Выручка сегодня</div>
-        <div class="stat-val">12 400 ₽</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-sub">Записей на день</div>
-        <div class="stat-val">8</div>
-      </div>
-    </div>
+  <!-- ШАГ 4: ПОДТВЕРЖДЕНИЕ -->
+  <div class="step-screen" id="step-4">
+    <h1 class="step-title">Проверьте запись</h1>
+    <div class="step-desc">Финальные детали вашего визита</div>
 
-    <div class="section-label">Ближайшие гости</div>
-    
-    <div class="admin-order-card">
-      <div class="order-header">
-        <span>Магомед (Клиент)</span>
-        <span>14:00</span>
+    <div class="summary-card">
+      <div class="summary-line">
+        <span style="color: var(--text-dim);">Услуга:</span>
+        <span id="sum-service" style="font-weight: 600;">-</span>
       </div>
-      <div style="font-size: 0.82rem; color: var(--text-sub);">Стрижка + Борода • Мастер: Али</div>
-      <div style="font-weight: 700; margin-top: 6px;">1 700 ₽</div>
-      <div class="order-actions">
-        <button class="btn-action" onclick="alert('Добавлено: Мытье/Патчи (+300 ₽)')">+ Патчи (300 ₽)</button>
-        <button class="btn-action done" onclick="alert('Чек успешно закрыт!')">Завершить</button>
+      <div class="summary-line">
+        <span style="color: var(--text-dim);">Мастер:</span>
+        <span id="sum-master" style="font-weight: 600;">-</span>
+      </div>
+      <div class="summary-line">
+        <span style="color: var(--text-dim);">Дата:</span>
+        <span id="sum-date" style="font-weight: 600;">-</span>
+      </div>
+      <div class="summary-line">
+        <span style="color: var(--text-dim);">Время:</span>
+        <span id="sum-time" style="font-weight: 600;">-</span>
+      </div>
+      <div class="summary-line total">
+        <span>К оплате на месте:</span>
+        <span id="sum-price" style="color: var(--accent-blue);">-</span>
       </div>
     </div>
   </div>
 
-  <!-- НИЖНЯЯ ПАНЕЛЬ ПЕРЕКЛЮЧЕНИЯ -->
-  <nav class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('book', this)">
-      <span>💈</span>
-      <span>Запись</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('my-orders', this)">
-      <span>📅</span>
-      <span>Визиты</span>
-    </button>
-    <button class="tab-btn" id="admin-tab-btn" style="display: none;" onclick="switchTab('admin', this)">
-      <span>👑</span>
-      <span>Владелец</span>
-    </button>
-  </nav>
+  <!-- КАБИНЕТ ВЛАДЕЛЬЦА (СКРЫТЫЙ) -->
+  <div class="staff-screen" id="screen-owner">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h1 class="step-title" style="margin: 0;">Панель владельца</h1>
+      <button onclick="exitStaffMode()" style="background: none; border: 1px solid var(--glass-border); color: var(--text-dim); padding: 6px 12px; border-radius: 8px;">Выход</button>
+    </div>
+
+    <div class="glass-card" style="margin-bottom: 16px;">
+      <div style="color: var(--text-dim); font-size: 0.8rem;">Касса за сегодня</div>
+      <div style="font-size: 1.7rem; font-weight: 700; color: #fff; margin-top: 4px;">14 200 ₽</div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0 10px 0;">
+      <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); font-weight: 600;">Команда мастеров</div>
+      <button onclick="openAddMasterPrompt()" style="background: var(--accent-blue); border: none; color: #fff; font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; font-weight: 600;">+ Добавить</button>
+    </div>
+
+    <div id="owner-masters-list"></div>
+  </div>
+
+  <!-- КАБИНЕТ МАСТЕРА (СКРЫТЫЙ) -->
+  <div class="staff-screen" id="screen-barber">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h1 class="step-title" style="margin: 0;" id="barber-screen-title">Смена: Барбер</h1>
+      <button onclick="exitStaffMode()" style="background: none; border: 1px solid var(--glass-border); color: var(--text-dim); padding: 6px 12px; border-radius: 8px;">Выход</button>
+    </div>
+
+    <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); font-weight: 600; margin-bottom: 12px;">Записи на сегодня</div>
+    <div class="glass-card">
+      <div style="display: flex; justify-content: space-between; font-weight: 600;">
+        <span>14:00 • Мурад</span>
+        <span style="color: var(--accent-blue);">1 700 ₽</span>
+      </div>
+      <div style="font-size: 0.8rem; color: var(--text-dim); margin: 4px 0 12px 0;">Комплекс: Стрижка + Борода</div>
+      <button class="btn-blue" onclick="alert('Чек завершен!')">Завершить стрижку</button>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО СЛУЖЕБНОГО ВХОДА (PIN) -->
+  <div class="modal-backdrop" id="auth-modal">
+    <div class="modal-window">
+      <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">Служебный вход</div>
+      <div style="font-size: 0.8rem; color: var(--text-dim);">Введите PIN-код для входа</div>
+      <input type="password" id="staff-pin" class="pin-input" maxlength="4" placeholder="••••">
+      <button class="btn-blue" onclick="verifyPin()">Войти</button>
+      <div onclick="closeAuthModal()" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 14px; cursor: pointer;">Отмена</div>
+    </div>
+  </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
 
-    // ID владельца (для отображения вкладки админа)
-    const OWNER_TG_ID = 9178306592; // Твой Telegram ID
-    const currentUserId = tg.initDataUnsafe?.user?.id;
+    // Основная конфигурация
+    const OWNER_PIN = "7777"; // Секретный PIN владельца
+    let currentStep = 1;
 
-    if (currentUserId === OWNER_TG_ID || !currentUserId) {
-      document.getElementById('admin-tab-btn').style.display = 'flex';
-    }
+    // Реестр мастеров (хранение даты приема для расчета срока службы)
+    let mastersData = [
+      { id: 1, name: "Магомед", role: "Top Barber", pin: "1111", startDate: "2025-11-15" },
+      { id: 2, name: "Али", role: "Barber", pin: "2222", startDate: "2026-03-01" }
+    ];
 
-    // Генерация дней на неделю вперед
-    const daysContainer = document.getElementById('days-container');
-    const weekDays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-    let selectedDate = "Сегодня";
-
-    for (let i = 0; i < 7; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() + i);
-      const dayName = i === 0 ? 'Сегодня' : weekDays[d.getDay()];
-      const dayNum = d.getDate();
-
-      const chip = document.createElement('div');
-      chip.className = `day-chip ${i === 0 ? 'selected' : ''}`;
-      chip.innerHTML = `<div class="day-chip-name">${dayName}</div><div class="day-chip-num">${dayNum}</div>`;
-      chip.onclick = function() {
-        document.querySelectorAll('.day-chip').forEach(c => c.classList.remove('selected'));
-        chip.classList.add('selected');
-        selectedDate = `${dayName}, ${dayNum}`;
-        updateButton();
-      };
-      daysContainer.appendChild(chip);
-    }
-
-    let booking = {
-      date: "Сегодня",
+    let orderState = {
       service: "Мужская стрижка",
       price: 1200,
-      master: "Магомед",
+      master: "Любой свободный",
+      date: "Сегодня",
       time: "11:00"
     };
 
-    function updateButton() {
-      tg.MainButton.color = "#ffffff";
-      tg.MainButton.textColor = "#000000";
-      tg.MainButton.setText(`ЗАПИСАТЬСЯ • ${booking.time} • ${booking.price} ₽`);
-      tg.MainButton.show();
+    // Расчет стажа (Срока службы)
+    function calculateTenure(dateStr) {
+      const start = new Date(dateStr);
+      const now = new Date();
+      
+      let years = now.getFullYear() - start.getFullYear();
+      let months = now.getMonth() - start.getMonth();
+      let days = now.getDate() - start.getDate();
+
+      if (days < 0) {
+        months -= 1;
+        const prevMonthDays = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+        days += prevMonthDays;
+      }
+      if (months < 0) {
+        years -= 1;
+        months += 12;
+      }
+
+      let res = [];
+      if (years > 0) res.push(`${years} г.`);
+      if (months > 0) res.push(`${months} мес.`);
+      if (days > 0 || res.length === 0) res.push(`${days} дн.`);
+      return res.join(" ");
     }
 
-    function setService(el, name, price) {
-      document.querySelectorAll('#services-container .service-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-      booking.service = name;
-      booking.price = price;
-      updateButton();
+    // Рендер мастеров в клиентской части и админке
+    function renderMasters() {
+      const clientBox = document.getElementById('masters-list-client');
+      const ownerBox = document.getElementById('owner-masters-list');
+      clientBox.innerHTML = '';
+      ownerBox.innerHTML = '';
+
+      mastersData.forEach(m => {
+        // Клиентский список
+        const card = document.createElement('div');
+        card.className = 'glass-card';
+        card.onclick = () => selectMaster(card, m.name);
+        card.innerHTML = `
+          <div class="master-item">
+            <div class="master-avatar">${m.name[0]}</div>
+            <div class="master-info">
+              <div class="master-title">${m.name}</div>
+              <div class="master-role">${m.role}</div>
+            </div>
+          </div>
+        `;
+        clientBox.appendChild(card);
+
+        // Список для владельца
+        const tenure = calculateTenure(m.startDate);
+        const ownerCard = document.createElement('div');
+        ownerCard.className = 'glass-card';
+        ownerCard.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.95rem;">${m.name} (${m.role})</div>
+              <div class="badge-experience">Стаж: ${tenure}</div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-dim);">PIN: ${m.pin}</div>
+          </div>
+        `;
+        ownerBox.appendChild(ownerCard);
+      });
     }
 
-    function setMaster(el, name) {
-      document.querySelectorAll('.master-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-      booking.master = name;
-      updateButton();
-    }
+    // Инициализация системного нативного выбора даты
+    const dateInput = document.getElementById('native-date-picker');
+    const now = new Date();
+    const todayISO = now.toISOString().split('T')[0];
+    dateInput.min = todayISO;
+    dateInput.value = todayISO;
 
-    function setTime(el, time) {
-      document.querySelectorAll('.time-item').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-      booking.time = time;
-      updateButton();
-    }
+    function handleDateChange(input) {
+      if (!input.value) return;
+      const parts = input.value.split('-');
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      
+      const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+      const formatted = `${d.getDate()} ${months[d.getMonth()]}`;
 
-    function switchTab(tabName, btn) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-
-      document.getElementById(`page-${tabName}`).classList.add('active');
-      btn.classList.add('active');
-
-      if (tabName === 'book') {
-        tg.MainButton.show();
+      if (input.value === todayISO) {
+        document.getElementById('display-date-title').innerText = "Сегодня";
+        document.getElementById('display-date-sub').innerText = "Выбрать другой день ▾";
+        orderState.date = "Сегодня";
       } else {
-        tg.MainButton.hide();
+        document.getElementById('display-date-title').innerText = formatted;
+        document.getElementById('display-date-sub').innerText = "Нажмите для смены даты ▾";
+        orderState.date = formatted;
       }
     }
 
-    Telegram.WebApp.onEvent('mainButtonClicked', function() {
-      booking.date = selectedDate;
-      tg.sendData(JSON.stringify(booking));
+    // Пошаговая навигация (Wizard)
+    function goToStep(step) {
+      currentStep = step;
+      document.querySelectorAll('.step-screen').forEach((s, idx) => {
+        s.classList.toggle('active', idx + 1 === step);
+      });
+
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`tick-${i}`).classList.toggle('active', i <= step);
+      }
+      document.getElementById('step-counter').innerText = `Шаг ${step} из 4`;
+
+      // Управление Telegram кнопками
+      if (step > 1) {
+        tg.BackButton.show();
+      } else {
+        tg.BackButton.hide();
+      }
+
+      tg.MainButton.color = "#2563eb";
+      tg.MainButton.textColor = "#ffffff";
+
+      if (step === 4) {
+        document.getElementById('sum-service').innerText = orderState.service;
+        document.getElementById('sum-master').innerText = orderState.master;
+        document.getElementById('sum-date').innerText = orderState.date;
+        document.getElementById('sum-time').innerText = orderState.time;
+        document.getElementById('sum-price').innerText = `${orderState.price} ₽`;
+
+        tg.MainButton.setText(`ПОДТВЕРДИТЬ ЗАПИСЬ • ${orderState.price} ₽`);
+      } else {
+        tg.MainButton.setText("ДАЛЕЕ");
+      }
+      tg.MainButton.show();
+    }
+
+    tg.BackButton.onClick(() => {
+      if (currentStep > 1) goToStep(currentStep - 1);
     });
 
-    updateButton();
+    tg.MainButton.onClick(() => {
+      if (currentStep < 4) {
+        goToStep(currentStep + 1);
+      } else {
+        tg.sendData(JSON.stringify(orderState));
+      }
+    });
+
+    // Обработчики кликов шагов
+    function selectService(el, name, price) {
+      document.querySelectorAll('#step-1 .glass-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      orderState.service = name;
+      orderState.price = price;
+    }
+
+    function selectMaster(el, name) {
+      document.querySelectorAll('#step-2 .glass-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      orderState.master = name;
+    }
+
+    function selectTime(el, time) {
+      document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      orderState.time = time;
+    }
+
+    // Скрытый вход: зажатие на 2 секунды логотипа
+    let pressTimer;
+    const trigger = document.getElementById('secret-trigger');
+    
+    trigger.addEventListener('touchstart', startPress);
+    trigger.addEventListener('touchend', cancelPress);
+    trigger.addEventListener('mousedown', startPress);
+    trigger.addEventListener('mouseup', cancelPress);
+
+    function startPress() {
+      pressTimer = setTimeout(() => {
+        document.getElementById('auth-modal').classList.add('show');
+        document.getElementById('staff-pin').focus();
+      }, 1500);
+    }
+
+    function cancelPress() {
+      clearTimeout(pressTimer);
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.remove('show');
+      document.getElementById('staff-pin').value = '';
+    }
+
+    function verifyPin() {
+      const pin = document.getElementById('staff-pin').value.trim();
+      closeAuthModal();
+
+      if (pin === OWNER_PIN) {
+        openStaffScreen('screen-owner');
+      } else {
+        const foundMaster = mastersData.find(m => m.pin === pin);
+        if (foundMaster) {
+          document.getElementById('barber-screen-title').innerText = `Смена: ${foundMaster.name}`;
+          openStaffScreen('screen-barber');
+        } else {
+          alert('Неверный код доступа');
+        }
+      }
+    }
+
+    function openStaffScreen(screenId) {
+      document.querySelectorAll('.step-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('progress-bar').style.display = 'none';
+      document.getElementById('step-counter').style.display = 'none';
+      tg.MainButton.hide();
+      tg.BackButton.hide();
+
+      document.querySelectorAll('.staff-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+    }
+
+    function exitStaffMode() {
+      document.querySelectorAll('.staff-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('progress-bar').style.display = 'flex';
+      document.getElementById('step-counter').style.display = 'block';
+      goToStep(1);
+    }
+
+    function openAddMasterPrompt() {
+      const name = prompt("Имя мастера:");
+      if (!name) return;
+      const role = prompt("Квалификация (Barber / Top Barber):", "Barber") || "Barber";
+      const pin = prompt("Персональный 4-значный PIN:", "0000") || "0000";
+      const startDate = prompt("Дата выхода (ГГГГ-ММ-ДД):", todayISO) || todayISO;
+
+      mastersData.push({
+        id: Date.now(),
+        name,
+        role,
+        pin,
+        startDate
+      });
+      renderMasters();
+    }
+
+    // Старт
+    renderMasters();
+    goToStep(1);
   </script>
 </body>
 </html>
